@@ -1,15 +1,15 @@
 ###IIR Analog Filters
 
 **Requirements:** None  
-**Limitations:** [DSP Libraries](www.rtxi.org/plugins/DSP.tar.gz) (included) 
+**Limitations:** [DSP Libraries](www.rtxi.org/plugins/DSP.tar.gz) (included)  
 
-![REDO THIS LINK](http://www.rtxi.org/wp-content/uploads/2012/03/IIRfilter.png)
+![IIR Filter GUI](iir-filter.png)
 
 This module computes coefficients for three types of filters. They require the following parameters:
 
-1. Butterworth: passband edge
-2. Chebyshev: passband ripple, passband edge
-3. Elliptical: passband ripple, stopband ripple, passband edge, stopband edge
+1. Butterworth: passband edge  
+2. Chebyshev: passband ripple, passband edge  
+3. Elliptical: passband ripple, stopband ripple, passband edge, stopband edge  
 
 You may save the computed coefficients and the filter’s parameters to a file.
 
@@ -36,5 +36,3 @@ An Elliptical (Cauer) filter has a shorter transition region than the Chebyshev 
 5. Stopband Edge (Hz)
 6. Input quantizing factor: the number of bits to which the input signal is to be quantized
 7. Coefficients quantizing factor: the number of bits to which the filter coefficients are to be quantized
-
-![EDIT THIS LINK](http://www.rtxi.org/wp-content/uploads/2012/03/IIRfilter.png)
