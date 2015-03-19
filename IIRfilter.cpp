@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <numeric>
 #include <time.h>
-#include "../include/DSP/log2.h"
+#include "include/DSP/log2.h"
 
 #include <qcheckbox.h>
 #include <qdatetime.h>

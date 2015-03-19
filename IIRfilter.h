@@ -24,13 +24,13 @@
  */
 
 #include <default_gui_model.h>
-#include "../include/DSP/iir_dsgn.h"
-#include "../include/DSP/dir1_iir.h"
-#include "../include/DSP/unq_iir.h"
-#include "../include/DSP/buttfunc.h"
-#include "../include/DSP/chebfunc.h"
-#include "../include/DSP/elipfunc.h"
-#include "../include/DSP/bilinear.h"
+#include "include/DSP/iir_dsgn.h"
+#include "include/DSP/dir1_iir.h"
+#include "include/DSP/unq_iir.h"
+#include "include/DSP/buttfunc.h"
+#include "include/DSP/chebfunc.h"
+#include "include/DSP/elipfunc.h"
+#include "include/DSP/bilinear.h"
 #include <qcombobox.h>
 #include <qfiledialog.h>
 #include <qmessagebox.h>
