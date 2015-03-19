@@ -1,16 +1,15 @@
 ###IIR Analog Filters
 
 **Requirements:** None  
-**Limitations:** [DSP Libraries](www.rtxi.org/plugins/DSP.tar.gz) (included)  
+**Limitations:** [DSP Libraries](https://github.com/RTXI/dsp-lib) (included) 
 
-![IIR Filter GUI](iir-filter.png)
+![REDO THIS LINK](IIRfilter.png)
 
-<!--start-->
 This module computes coefficients for three types of filters. They require the following parameters:
 
-1. Butterworth: passband edge  
-2. Chebyshev: passband ripple, passband edge  
-3. Elliptical: passband ripple, stopband ripple, passband edge, stopband edge  
+1. Butterworth: passband edge
+2. Chebyshev: passband ripple, passband edge
+3. Elliptical: passband ripple, stopband ripple, passband edge, stopband edge
 
 You may save the computed coefficients and the filter’s parameters to a file.
 
@@ -19,7 +18,6 @@ The Butterworth filter is the best compromise between attenuation and phase resp
 The Chebyshev filter has a smaller transition region than the same-order Butterworth filter, at the expense of ripples in its pass band. The filter minimizes the height of the maximum ripple. If you use a Chebyshev filter, you should also choose the type of normalization to apply.
 
 An Elliptical (Cauer) filter has a shorter transition region than the Chebyshev filter because it allows ripples in both the stop and pass bands, giving a much higher rate of attenuation in the stop band. Elliptical filters give better frequency discrimination, but have a degraded transient response.
-<!--end-->
 
 ####Input Channels
 
@@ -38,3 +36,5 @@ An Elliptical (Cauer) filter has a shorter transition region than the Chebyshev 
 5. Stopband Edge (Hz)
 6. Input quantizing factor: the number of bits to which the input signal is to be quantized
 7. Coefficients quantizing factor: the number of bits to which the filter coefficients are to be quantized
+
+![EDIT THIS LINK](IIRfilter.png)
