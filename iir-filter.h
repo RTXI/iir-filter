@@ -24,13 +24,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <default_gui_model.h>
-#include "DSP/iir_dsgn.h"
-#include "DSP/dir1_iir.h"
-#include "DSP/unq_iir.h"
-#include "DSP/buttfunc.h"
-#include "DSP/chebfunc.h"
-#include "DSP/elipfunc.h"
-#include "DSP/bilinear.h"
+#include <DSP/iir_dsgn.h>
+#include <DSP/dir1_iir.h>
+#include <DSP/unq_iir.h>
+#include <DSP/buttfunc.h>
+#include <DSP/chebfunc.h>
+#include <DSP/elipfunc.h>
+#include <DSP/bilinear.h>
 #include <QtGui>
 
 #define TWO_PI 6.28318531

@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <numeric>
 #include <time.h>
-#include "DSP/log2.h"
+#include <DSP/log2.h>
 #include <QtGui>
 #include <sys/stat.h>
 
