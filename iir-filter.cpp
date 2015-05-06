@@ -75,6 +75,7 @@ IIRfilter::IIRfilter(void) : DefaultGUIModel("IIR Filter", ::vars, ::num_vars) {
 	update(INIT);
 	refresh(); // refresh the GUI
 	printf("\nStarting IIR filter:\n"); // prints to terminal
+	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
 
 IIRfilter::~IIRfilter(void) {}
