@@ -225,14 +225,6 @@ void IIRfilter::makeFilter() {
 			filter_design->GetNumerCoefficients(),
 			filter_design->GetDenomCoefficients());
 	}
-	/*
-	printf("\n      IIR Filter\n");
-	for (int i = 0; i < num_taps; i++)
-		{
-		printf("h[%i] = %f\n", i, h3[i]);
-	}
-	printf("\n");
-	*/
 }
 
 void IIRfilter::saveIIRData() {
@@ -271,8 +263,6 @@ void IIRfilter::saveIIRData() {
 			}
 			stream << QString(" \n");
 			
-//			double *numer_coeff = new double[filter_design->GetNumNumerCoeffs()];
-//			double *denom_coeff = new double[filter_design->GetNumDenomCoeffs()+ 1];
 			double *numer_coeff = filter_design->GetNumerCoefficients();
 			double *denom_coeff = filter_design->GetDenomCoefficients();
 			
@@ -345,24 +335,18 @@ void IIRfilter::customizeGUI(void) {
 	QFormLayout *optionLayout = new QFormLayout;
 	customGUILayout->addLayout(optionLayout);
 	
-//	QLabel *filterLabel = new QLabel("Type of Filter:");
 	filterType = new QComboBox;
 	filterType->setToolTip("IIR filter.");
 	filterType->insertItem(1, "Butterworth");
 	filterType->insertItem(2, "Chebyshev");
 	filterType->insertItem(3," Elliptical");
-//	optionLayout->addWidget(filterLabel, 1, 0);
-//	optionLayout->addWidget(filterType, 1, 1);
 	optionLayout->addRow("IIR filter", filterType);
 	QObject::connect(filterType,SIGNAL(activated(int)), this, SLOT(updateFilterType(int)));
 	
-//	QLabel *normTypeLabel = new QLabel("Type of Chebyshev normalization:");
 	normType = new QComboBox;
 	normType->insertItem(1, "3 dB bandwidth");
 	normType->insertItem(2, "Ripple bandwidth");
 	normType->setToolTip("Type of Chebyshev normalization");
-//	optionLayout->addWidget(normTypeLabel, 0, 0);
-//	optionLayout->addWidget(normType, 0, 1);
 	optionLayout->addRow("Chebyshev Normalize Type:", normType);
 	QObject::connect(normType,SIGNAL(activated(int)), this, SLOT(updateNormType(int)));
 	normType->setEnabled(false);
@@ -376,7 +360,6 @@ void IIRfilter::customizeGUI(void) {
 	QObject::connect(quantizeCheckBox,SIGNAL(toggled(bool)),this,SLOT(toggleQuantize(bool)));
 	predistortCheckBox->setToolTip("Predistort frequencies for bilinear transform");
 	quantizeCheckBox->setToolTip("Quantize input and coefficients");
-//	customGUILayout->addLayout(checkBoxLayout);
 	
 	QObject::connect(DefaultGUIModel::pauseButton, SIGNAL(toggled(bool)), saveDataButton, SLOT(setEnabled(bool)));
 	QObject::connect(DefaultGUIModel::pauseButton, SIGNAL(toggled(bool)), modifyButton, SLOT(setEnabled(bool)));
