@@ -271,10 +271,10 @@ void IIRfilter::saveIIRData() {
 			}
 			stream << QString(" \n");
 			
-			double *numer_coeff = new double[filter_design->GetNumNumerCoeffs()];
-			double *denom_coeff = new double[filter_design->GetNumDenomCoeffs()+ 1];
-			numer_coeff = filter_design->GetNumerCoefficients();
-			denom_coeff = filter_design->GetDenomCoefficients();
+//			double *numer_coeff = new double[filter_design->GetNumNumerCoeffs()];
+//			double *denom_coeff = new double[filter_design->GetNumDenomCoeffs()+ 1];
+			double *numer_coeff = filter_design->GetNumerCoefficients();
+			double *denom_coeff = filter_design->GetDenomCoefficients();
 			
 			printf("\nFilter numerator coefficients:\n");
 			stream << QString("Filter numerator coefficients:\n");
@@ -292,6 +292,9 @@ void IIRfilter::saveIIRData() {
 			}
 			dataFile.close();
 			printf("File closed.\n");
+			
+			delete[] numer_coeff;
+			delete[] denom_coeff;
 		}
 		else {
 			QMessageBox::information(this, "IIR filter: Save filter parameters",
