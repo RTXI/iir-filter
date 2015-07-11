@@ -74,7 +74,6 @@ IIRfilter::IIRfilter(void) : DefaultGUIModel("IIR Filter", ::vars, ::num_vars) {
 	customizeGUI();
 	update(INIT);
 	refresh(); // refresh the GUI
-	printf("\nStarting IIR filter:\n"); // prints to terminal
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
 
@@ -119,12 +118,10 @@ void IIRfilter::update(DefaultGUIModel::update_flags_t flag) {
 	
 		case PAUSE:
 			output(0) = 0; // stop command in case pause occurs in the middle of command
-			printf("Protocol paused.\n");
 			break;
 	
 		case UNPAUSE:
 			bookkeep();
-			printf("Protocol started.\n");
 			break;
 	
 		case PERIOD:
@@ -158,24 +155,19 @@ void IIRfilter::initParameters() {
 void IIRfilter::bookkeep() {
 	count = 0;
 	systime = 0;
-	printf("input quan factor: %i, coeff quan factor: %i\n", input_quan_factor, coeff_quan_factor);
-	printf("input quan bits: %i, coeff quan bits: %i\n", ilog2(input_quan_factor), ilog2(coeff_quan_factor));
 }
 
 void IIRfilter::updateFilterType(int index) {
 	if (index == 0) {
 		filter_type = BUTTER;
-		printf("Filter type now set to BUTTERWORTH\n");
 		normType->setEnabled(false);
 		makeFilter();
 	} else if (index == 1) {
 		filter_type = CHEBY;
-		printf("Filter type now set to CHEBYSHEV\n");
 		normType->setEnabled(true);
 		makeFilter();
 	} else if (index == 2) {
 		filter_type = ELLIP;
-		printf("Filter type now set to ELLIPTICAL\n");
 		normType->setEnabled(false);
 		makeFilter();
 	}
@@ -183,8 +175,6 @@ void IIRfilter::updateFilterType(int index) {
 
 void IIRfilter::updateNormType(int index) {
 	ripple_bw_norm = index;
-	if (ripple_bw_norm) printf("Chebyshev normalization now set to ripple bandwidth\n");
-	else printf("Chebyshev normalization now set to 3 dB bandwidth\n");
 	makeFilter();
 }
 
@@ -266,22 +256,17 @@ void IIRfilter::saveIIRData() {
 			double *numer_coeff = filter_design->GetNumerCoefficients();
 			double *denom_coeff = filter_design->GetDenomCoefficients();
 			
-			printf("\nFilter numerator coefficients:\n");
 			stream << QString("Filter numerator coefficients:\n");
 			for (int i = 0; i < filter_design->GetNumNumerCoeffs(); i++) {
-				printf("%f\n", numer_coeff[i]);
 				stream << QString("numer_coeff[") << i << "] = "
 					<< (double) numer_coeff[i] << "\n";
 			}
-			printf("Filter denominator coefficients:\n");
 			stream << QString("Filter denominator coefficients:\n");
 			for (int i = 0; i < filter_design->GetNumDenomCoeffs() + 1; i++) {
-				printf("%f\n", denom_coeff[i]);
 				stream << QString("denom_coeff[") << i << "] = "
 					<< (double) denom_coeff[i] << "\n";
 			}
 			dataFile.close();
-			printf("File closed.\n");
 			
 			delete[] numer_coeff;
 			delete[] denom_coeff;
@@ -317,7 +302,6 @@ bool IIRfilter::OpenFile(QString FName) {
 
 	stream.setDevice(&dataFile);
 	//	stream.setPrintableData(false); // write binary
-	printf("File opened: %s\n", FName.toStdString().data());
 	return true;
 }
 

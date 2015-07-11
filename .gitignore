@@ -27,4 +27,5 @@ moc_*
 *.out
 *.app
 
-
+# moc
+moc_*
