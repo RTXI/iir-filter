@@ -77,12 +77,9 @@ class IIRfilter : public DefaultGUIModel {
 		double out; // bookkeeping for computing convolution
 		int n; // bookkeeping for computing convolution
 		double dt; // real-time period of system (s)
-		long long count; // keep track of time
-		double systime; // time that module has been running
 
 		// IIRfilter functions
 		void initParameters();
-		void bookkeep();
 		void makeFilter();
 		QComboBox *filterType;
 		QComboBox *normType;

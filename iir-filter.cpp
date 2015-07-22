@@ -54,7 +54,6 @@ static DefaultGUIModel::variable_t vars[] = {
 		DefaultGUIModel::PARAMETER | DefaultGUIModel::INTEGER, },
 	{ "Coefficients quantizing factor", "Bits eg. 10, 12, 16",
 		DefaultGUIModel::PARAMETER | DefaultGUIModel::INTEGER, },
-	{ "Time (s)", "Time (s)", DefaultGUIModel::STATE, }, 
 };
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
@@ -81,10 +80,7 @@ IIRfilter::~IIRfilter(void) {}
 
 //execute, the code block that actually does the signal processing
 void IIRfilter::execute(void) {
-	systime = count * dt; // current time, s
 	output(0) = filter_implem->ProcessSample(input(0));
-	
-	count++; // increment count to measure time
 	return;
 }
 
@@ -98,7 +94,6 @@ void IIRfilter::update(DefaultGUIModel::update_flags_t flag) {
 			setParameter("Stopband Edge (Hz)", QString::number(stopband_edge));
 			setParameter("Input quantizing factor", QString::number(ilog2(input_quan_factor)));
 			setParameter("Coefficients quantizing factor", QString::number(ilog2(coeff_quan_factor)));
-			setState("Time (s)", systime);
 			filterType->setCurrentIndex(filter_type);
 			break;
 	
@@ -112,7 +107,6 @@ void IIRfilter::update(DefaultGUIModel::update_flags_t flag) {
 			stopband_edge *= TWO_PI;
 			input_quan_factor = 2 ^ getParameter("Input quantizing factor").toInt(); // quantize input to 12 bits
 			coeff_quan_factor = 2 ^ getParameter("Coefficients quantizing factor").toInt(); // quantize filter coefficients to 12 bits
-			bookkeep();
 			makeFilter();
 			break;
 	
@@ -121,7 +115,6 @@ void IIRfilter::update(DefaultGUIModel::update_flags_t flag) {
 			break;
 	
 		case UNPAUSE:
-			bookkeep();
 			break;
 	
 		case PERIOD:
@@ -149,12 +142,6 @@ void IIRfilter::initParameters() {
 	input_quan_factor = 4096; // quantize input to 12 bits
 	coeff_quan_factor = 4096; // quantize filter coefficients to 12 bits
 	makeFilter();
-	bookkeep();
-}
-
-void IIRfilter::bookkeep() {
-	count = 0;
-	systime = 0;
 }
 
 void IIRfilter::updateFilterType(int index) {
