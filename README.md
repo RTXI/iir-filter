@@ -1,7 +1,7 @@
 ###IIR Analog Filters
 
-**Requirements:** None  
-**Limitations:** [DSP Libraries](www.rtxi.org/plugins/DSP.tar.gz) (included)  
+**Requirements:** DSP Libraries  
+**Limitations:** None  
 
 ![IIR Filter GUI](iir-filter.png)
 
@@ -19,6 +19,8 @@ The Butterworth filter is the best compromise between attenuation and phase resp
 The Chebyshev filter has a smaller transition region than the same-order Butterworth filter, at the expense of ripples in its pass band. The filter minimizes the height of the maximum ripple. If you use a Chebyshev filter, you should also choose the type of normalization to apply.
 
 An Elliptical (Cauer) filter has a shorter transition region than the Chebyshev filter because it allows ripples in both the stop and pass bands, giving a much higher rate of attenuation in the stop band. Elliptical filters give better frequency discrimination, but have a degraded transient response.
+
+The DSP libraries should already be installed in `/usr/local/lib/rtxi_includes/`. They were installed there when RTXI was installed.  
 <!--end-->
 
 ####Input Channels
