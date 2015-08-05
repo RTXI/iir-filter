@@ -31,7 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <DSP/chebfunc.h>
 #include <DSP/elipfunc.h>
 #include <DSP/bilinear.h>
-#include <QtGui>
 
 #define TWO_PI 6.28318531
 
@@ -43,7 +42,6 @@ class IIRfilter : public DefaultGUIModel {
 		virtual ~IIRfilter(void);
 	
 		void execute(void);
-//		void createGUI(DefaultGUIModel::variable_t *, int);
 		void customizeGUI(void);
 	
 		enum filter_t {
