@@ -7,7 +7,7 @@ HEADERS = iir-filter.h\
 SOURCES = iir-filter.cpp \
           moc_iir-filter.cpp
 
-LIBS = -lqwt -lrtdsp
+LIBS = -lrtdsp
 
 ### Do not edit below this line ###
 
