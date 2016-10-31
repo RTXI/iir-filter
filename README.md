@@ -31,9 +31,8 @@ filter because it allows ripples in both the stop and pass bands, giving a much
 higher rate of attenuation in the stop band. Elliptical filters give better
 frequency discrimination, but have a degraded transient response.
 
-The DSP libraries should already be installed in
-`/usr/local/lib/rtxi_includes/`. They were installed there when RTXI was
-installed.  
+The DSP libraries should already be installed in `/usr/local/lib/rtxi/libs`,
+with headers in `/usr/local/include/rtxi/libs/DSP`. 
 <!--end-->
 
 #### Input Channels
