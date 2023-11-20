@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <QTimer>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFormLayout>
+#include <QCheckBox>
 #include <algorithm>
 #include <numeric>
 #include <rtxi/dsp/log2.h>
@@ -67,7 +71,11 @@ enum PARAMETER : Widgets::Variable::Id
 	STOPBAND_RIPPLE,
 	STOPBAND_EDGE,
 	INPUT_QUANTIZING_FACTOR,
-	COEFF_QUANTIZING_FACTOR
+	COEFF_QUANTIZING_FACTOR,
+	FILTER_TYPE,
+	CHEBYSHEV_NORM_TYPE,
+	PREDISTORT,
+	QUANTIZE
 };
 
 inline std::vector<Widgets::Variable::Info> get_default_vars()
@@ -80,7 +88,11 @@ inline std::vector<Widgets::Variable::Info> get_default_vars()
 		{STOPBAND_RIPPLE,        "Stopband Ripple (dB)", "Stopband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
 		{STOPBAND_EDGE,          "Stopband Edge (Hz)", "Stopband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
 		{INPUT_QUANTIZING_FACTOR,"Input quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 0},
-		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 0}
+		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 0},
+		{FILTER_TYPE,		 "Type of filter to implement", "Butterworth, Chebyshev, Elliptical", Widgets::Variable::UINT_PARAMETER, 0},
+		{CHEBYSHEV_NORM_TYPE,	 "Chebyshev normalization type", "", Widgets::Variable::UINT_PARAMETER, 0},
+		{PREDISTORT,	 "Pre-Distort Signal", "", Widgets::Variable::UINT_PARAMETER, 1},
+		{QUANTIZE,	 "Use Quantization Mode", "", Widgets::Variable::UINT_PARAMETER, 0}
 	};
 }
 
@@ -105,7 +117,7 @@ IIRfilter::IIRfilter(QMainWindow* main_window, Event::Manager* ev_manager)
 	"Since this plug-in computes new filter coefficients whenever you change the parameters, you should not"
 	"change any settings during real-time.</p>");
 	
-	Widgets::Panel::createGUI(get_default_vars(), {});
+	Widgets::Panel::createGUI(get_default_vars(), {FILTER_TYPE, PREDISTORT, QUANTIZE});
 	customizeGUI();
 	update_state(RT::State::INIT);
 	refresh(); // refresh the GUI
@@ -115,21 +127,27 @@ IIRfilter::IIRfilter(QMainWindow* main_window, Event::Manager* ev_manager)
 //execute, the code block that actually does the signal processing
 void IIRfilterComponent::execute() {
 	switch (this->getState()) {
+		case RT::State::EXEC:
+			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
+			break;
 		case RT::State::INIT:
 			initParameters();
 			this->setState(RT::State::EXEC);
 			break;
 	
 		case RT::State::MODIFY:
-			filter_order = int(getParameter("Filter Order").toDouble());
-			passband_ripple = getParameter("Passband Ripple (dB)").toDouble();
-			passband_edge = getParameter("Passband Edge (Hz)").toDouble();
-			stopband_ripple = getParameter("Stopband Ripple (dB)").toDouble();
-			stopband_edge = getParameter("Stopband Edge (Hz)").toDouble();
-			filter_type = filter_t(filterType->currentIndex());
+			filter_order = getValue<int64_t>(FILTER_ORDER);
+			passband_ripple = getValue<double>(PASSBAND_RIPPLE);
+			passband_edge = getValue<double>(PASSBAND_EDGE);
+			stopband_ripple = getValue<double>(STOPBAND_RIPPLE);
+			stopband_edge = getValue<double>(STOPBAND_EDGE);
 			stopband_edge *= TWO_PI;
-			input_quan_factor = 2 ^ getParameter("Input quantizing factor").toInt(); // quantize input to 12 bits
-			coeff_quan_factor = 2 ^ getParameter("Coefficients quantizing factor").toInt(); // quantize filter coefficients to 12 bits
+			filter_type = static_cast<filter_t>(getValue<uint64_t>(FILTER_TYPE));
+			input_quan_factor = 2 ^ getValue<int64_t>(INPUT_QUANTIZING_FACTOR); // quantize input to 12 bits
+			coeff_quan_factor = 2 ^ getValue<int64_t>(COEFF_QUANTIZING_FACTOR); // quantize filter coefficients to 12 bits
+			ripple_bw_norm = getValue<uint64_t>(CHEBYSHEV_NORM_TYPE);
+			predistort_enabled = getValue<uint64_t>(PREDISTORT) == 1;
+			quant_enabled = getValue<uint64_t>(QUANTIZE) == 1;
 			makeFilter();
 			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
 			break;
@@ -144,11 +162,28 @@ void IIRfilterComponent::execute() {
 			break;
 	
 		case RT::State::PERIOD:
-			dt = RT::System::getInstance()->getPeriod() * 1e-9; // s
+			dt = RT::OS::getPeriod() * 1e-9; // s
+			this->setState(RT::State::EXEC);
 			break;
 		default:
 			break;
 	}
+}
+
+std::vector<double> IIRfilterComponent::getNumeratorCoefficients()
+{
+	double* numerator_coeff = this->filter_design->GetNumerCoefficients();
+	int numer_count = this->filter_design->GetNumNumerCoeffs();
+	std::vector<double> result(numerator_coeff, numerator_coeff+numer_count);
+	return result;
+}
+
+std::vector<double> IIRfilterComponent::getDenominatorCoefficients()
+{
+	double* denominator_coeff = this->filter_design->GetDenomCoefficients();
+	int denomin_count = this->filter_design->GetNumDenomCoeffs();
+	std::vector<double> result(denominator_coeff, denominator_coeff+denomin_count);
+	return result;
 }
 
 // custom functions, as defined in the header file
@@ -169,27 +204,24 @@ void IIRfilterComponent::initParameters() {
 }
 
 void IIRfilter::updateFilterType(int index) {
-	if (index == 0) {
-		filter_type = BUTTER;
-		normType->setEnabled(false);
-		makeFilter();
-	} else if (index == 1) {
-		filter_type = CHEBY;
-		normType->setEnabled(true);
-		makeFilter();
-	} else if (index == 2) {
-		filter_type = ELLIP;
-		normType->setEnabled(false);
-		makeFilter();
+	if(index < 0) { return; }
+	int result = this->getHostPlugin()->setComponentParameter<uint64_t>(FILTER_TYPE, static_cast<uint64_t>(index));	
+	if(result < 0){
+		ERROR_MSG("IIRfilter::updateFilterType : Unable to change filter type"); 
 	}
+	this->update_state(RT::State::MODIFY);
 }
 
 void IIRfilter::updateNormType(int index) {
-	ripple_bw_norm = index;
-	makeFilter();
+	if(index < 0) { return; }
+	int result = this->getHostPlugin()->setComponentParameter<uint64_t>(CHEBYSHEV_NORM_TYPE, static_cast<uint64_t>(index));
+	if(result < 0){
+		ERROR_MSG("IIRfilter::updateFilterType : Unable to change filter normalization type"); 
+	}
+	this->update_state(RT::State::MODIFY);
 }
 
-void IIRfilter::makeFilter() {
+void IIRfilterComponent::makeFilter() {
 	switch (filter_type) {
 		case BUTTER:
 			analog_filter = new ButterworthTransFunc(filter_order);
@@ -233,54 +265,53 @@ void IIRfilter::saveIIRData() {
 	fd->setFileMode(QFileDialog::AnyFile);
 	fd->setViewMode(QFileDialog::Detail);
 	QString fileName;
+	auto* host_plugin = dynamic_cast<IIRfilterPlugin*>(this->getHostPlugin());
 	if (fd->exec() == QDialog::Accepted) {
 		QStringList files = fd->selectedFiles();
 		if (!files.isEmpty()) fileName = files.takeFirst();
 		
 		if (OpenFile(fileName)) {
 			// stream.setPrintableData(true);
-			switch (filter_type) {
-				case BUTTER:
-					stream << QString("BUTTERWORTH order=") << (int) filter_order
-						<< " passband edge=" << (double) passband_edge;
+			switch (this->filterType->currentIndex()) {
+				case 0:
+					stream << QString("BUTTERWORTH order=") << host_plugin->getComponentUIntParameter(FILTER_ORDER)
+						<< " passband edge=" << host_plugin->getComponentDoubleParameter(PASSBAND_EDGE);
 					break;
 
-				case CHEBY:
-					stream << QString("CHEBYSHEV order=") << (int) filter_order
-						<< " passband ripple=" << (double) passband_ripple
-						<< " passband edge=" << (double) passband_edge;
+				case 1:
+					stream << QString("CHEBYSHEV order=") << host_plugin->getComponentUIntParameter(FILTER_ORDER)
 
-					if (ripple_bw_norm == 0) stream << " with 3 dB bandwidth normalization";
+						<< " passband ripple=" << host_plugin->getComponentDoubleParameter(PASSBAND_RIPPLE)
+						<< " passband edge=" << host_plugin->getComponentDoubleParameter(PASSBAND_EDGE);
+
+					if (host_plugin->getComponentUIntParameter(CHEBYSHEV_NORM_TYPE) == 0) stream << " with 3 dB bandwidth normalization";
 					else stream << " with ripple bandwidth normalization";
 					break;
 		
-				case ELLIP:
-					stream << QString("ELLIPTICAL order=") << (int) filter_order
-						<< " passband ripple=" << (double) passband_ripple
-						<< " passband edge=" << (double) passband_edge
-						<< " stopband ripple=" << (double) stopband_ripple
-						<< " stopband edge=" << (double) stopband_edge;
+				case 2:
+					stream << QString("ELLIPTICAL order=") << host_plugin->getComponentUIntParameter(FILTER_ORDER)
+						<< " passband ripple=" << host_plugin->getComponentDoubleParameter(PASSBAND_RIPPLE)
+						<< " passband edge=" << host_plugin->getComponentDoubleParameter(PASSBAND_EDGE)
+						<< " stopband ripple=" << host_plugin->getComponentDoubleParameter(STOPBAND_RIPPLE)
+						<< " stopband edge=" << host_plugin->getComponentDoubleParameter(STOPBAND_EDGE);
 					break;
 			}
 			stream << QString(" \n");
-			
-			double *numer_coeff = filter_design->GetNumerCoefficients();
-			double *denom_coeff = filter_design->GetDenomCoefficients();
+		
+			std::vector<double> numer_coeff = host_plugin->getIIRfilterNumeratorCoefficients();
+			std::vector<double> denom_coeff = host_plugin->getIIRfilterDenominatorCoefficients();
 			
 			stream << QString("Filter numerator coefficients:\n");
-			for (int i = 0; i < filter_design->GetNumNumerCoeffs(); i++) {
+			for (int i = 0; i < numer_coeff.size(); i++) {
 				stream << QString("numer_coeff[") << i << "] = "
 					<< (double) numer_coeff[i] << "\n";
 			}
 			stream << QString("Filter denominator coefficients:\n");
-			for (int i = 0; i < filter_design->GetNumDenomCoeffs() + 1; i++) {
+			for (int i = 0; i < denom_coeff.size(); i++) {
 				stream << QString("denom_coeff[") << i << "] = "
 					<< (double) denom_coeff[i] << "\n";
 			}
 			dataFile.close();
-			
-			delete[] numer_coeff;
-			delete[] denom_coeff;
 		}
 		else {
 			QMessageBox::information(this, "IIR filter: Save filter parameters",
@@ -318,7 +349,8 @@ bool IIRfilter::OpenFile(QString FName) {
 
 //create the GUI components
 void IIRfilter::customizeGUI(void) {
-	QGridLayout *customLayout = Widgets::Panel::getLayout();
+	//QGridLayout *customLayout = Widgets::Panel::getLayout();
+	auto* customLayout = dynamic_cast<QVBoxLayout*>(this->layout());
 
 	QVBoxLayout *customGUILayout = new QVBoxLayout;
 	
@@ -356,21 +388,35 @@ void IIRfilter::customizeGUI(void) {
 	predistortCheckBox->setToolTip("Predistort frequencies for bilinear transform");
 	quantizeCheckBox->setToolTip("Quantize input and coefficients");
 	
-	QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), saveDataButton, SLOT(setEnabled(bool)));
-	QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), modifyButton, SLOT(setEnabled(bool)));
-	Widgets::Panel::pauseButton->setToolTip("Start/Stop filter");
-	Widgets::Panel::modifyButton->setToolTip("Commit changes to parameter values");
-	Widgets::Panel::unloadButton->setToolTip("Close plug-in");
+	//QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), saveDataButton, SLOT(setEnabled(bool)));
+	//QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), modifyButton, SLOT(setEnabled(bool)));
+	//Widgets::Panel::pauseButton->setToolTip("Start/Stop filter");
+	//Widgets::Panel::modifyButton->setToolTip("Commit changes to parameter values");
+	//Widgets::Panel::unloadButton->setToolTip("Close plug-in");
 	
-	customLayout->addLayout(customGUILayout, 0, 0);
-	customLayout->addLayout(checkBoxLayout, 2, 0);
+	customLayout->addLayout(customGUILayout, 0);
+	customLayout->addLayout(checkBoxLayout, 2);
 	setLayout(customLayout);	
 }
 
 void IIRfilter::togglePredistort(bool on) {
-	predistort_enabled = on;
+	uint64_t val = on ? 1 : 0;
+	this->getHostPlugin()->setComponentParameter(PREDISTORT, val);
 }
 
 void IIRfilter::toggleQuantize(bool on) {
-	quant_enabled = on;
+	uint64_t val = on ? 1 : 0;
+	this->getHostPlugin()->setComponentParameter(QUANTIZE, val);
+}
+
+IIRfilterPlugin::IIRfilterPlugin(Event::Manager* ev_manager) : Widgets::Plugin(ev_manager, "IIR Filter") {}
+
+std::vector<double> IIRfilterPlugin::getIIRfilterNumeratorCoefficients()
+{
+	return dynamic_cast<IIRfilterComponent*>(this->getComponent())->getNumeratorCoefficients();
+}
+
+std::vector<double> IIRfilterPlugin::getIIRfilterDenominatorCoefficients()
+{
+	return dynamic_cast<IIRfilterComponent*>(this->getComponent())->getDenominatorCoefficients();
 }

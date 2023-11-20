@@ -41,16 +41,18 @@ class IIRfilterComponent : public Widgets::Component{
 	public:
 		explicit IIRfilterComponent(Widgets::Plugin* host_plugin);
 		void execute() override;
+		std::vector<double> getNumeratorCoefficients();
+		std::vector<double> getDenominatorCoefficients();
 	private:
-		enum filter_t {
-			BUTTER, CHEBY, ELLIP,
+		enum filter_t : uint64_t {
+			BUTTER=0, CHEBY, ELLIP,
 		};
 		// filter parameters
 		FilterTransFunc *analog_filter;
 		IirFilterDesign *filter_design;
 		FilterImplementation *filter_implem;
 
-		double* h3; // filter coefficients
+		double h3; // filter coefficients
 		filter_t filter_type; // type of filter
 		double passband_ripple; // dB?
 		double stopband_ripple; // dB?
@@ -105,5 +107,9 @@ class IIRfilter : public Widgets::Panel {
 
 class IIRfilterPlugin : public Widgets::Plugin
 {
+public:
 	explicit IIRfilterPlugin(Event::Manager* ev_manager);
+	std::vector<double> getIIRfilterNumeratorCoefficients();
+	std::vector<double> getIIRfilterDenominatorCoefficients();
 };
+
