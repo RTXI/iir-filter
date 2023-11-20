@@ -32,37 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <rtxi/dsp/log2.h>
 #include "widget.hpp"
 
-//create plug-in
-std::unique_ptr<Widgets::Plugin> createRTXIPlugin(Event::Manager* ev_manager)
-{
-  return std::make_unique<IIRfilterPlugin>(ev_manager);
-}
-
-Widgets::Panel* createRTXIPanel(QMainWindow* main_window,
-                                Event::Manager* ev_manager)
-{
-  return new IIRfilter(main_window, ev_manager);
-}
-
-std::unique_ptr<Widgets::Component> createRTXIComponent(
-    Widgets::Plugin* host_plugin)
-{
-  return std::make_unique<IIRfilterComponent>(host_plugin);
-}
-
-Widgets::FactoryMethods fact;
-
-extern "C"
-{
-Widgets::FactoryMethods* getFactories()
-{
-  fact.createPanel = &createRTXIPanel;
-  fact.createComponent = &createRTXIComponent;
-  fact.createPlugin = &createRTXIPlugin;
-  return &fact;
-}
-};
-
 enum PARAMETER : Widgets::Variable::Id
 {
 	FILTER_ORDER=0,
@@ -82,17 +51,17 @@ inline std::vector<Widgets::Variable::Info> get_default_vars()
 {
 //set up parameters, calls for initialization, creation, update, and refresh of GUI
 	return {
-		{FILTER_ORDER,           "Filter Order", "Filter Order", Widgets::Variable::INT_PARAMETER, 0},
-		{PASSBAND_RIPPLE,        "Passband Ripple (dB)", "Passband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
-		{PASSBAND_EDGE,          "Passband Edge (Hz)", "Passband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
-		{STOPBAND_RIPPLE,        "Stopband Ripple (dB)", "Stopband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
-		{STOPBAND_EDGE,          "Stopband Edge (Hz)", "Stopband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 0.0},
-		{INPUT_QUANTIZING_FACTOR,"Input quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 0},
-		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 0},
-		{FILTER_TYPE,		 "Type of filter to implement", "Butterworth, Chebyshev, Elliptical", Widgets::Variable::UINT_PARAMETER, 0},
-		{CHEBYSHEV_NORM_TYPE,	 "Chebyshev normalization type", "", Widgets::Variable::UINT_PARAMETER, 0},
-		{PREDISTORT,	 "Pre-Distort Signal", "", Widgets::Variable::UINT_PARAMETER, 1},
-		{QUANTIZE,	 "Use Quantization Mode", "", Widgets::Variable::UINT_PARAMETER, 0}
+		{FILTER_ORDER,           "Filter Order", "Filter Order", Widgets::Variable::INT_PARAMETER, 10},
+		{PASSBAND_RIPPLE,        "Passband Ripple (dB)", "Passband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 3.0},
+		{PASSBAND_EDGE,          "Passband Edge (Hz)", "Passband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 60.0},
+		{STOPBAND_RIPPLE,        "Stopband Ripple (dB)", "Stopband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 60.0},
+		{STOPBAND_EDGE,          "Stopband Edge (Hz)", "Stopband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 200.0},
+		{INPUT_QUANTIZING_FACTOR,"Input quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 4096},
+		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 4096},
+		{FILTER_TYPE,		 "Type of filter to implement", "Butterworth, Chebyshev, Elliptical", Widgets::Variable::UINT_PARAMETER, 0UL},
+		{CHEBYSHEV_NORM_TYPE,	 "Chebyshev normalization type", "", Widgets::Variable::UINT_PARAMETER, 0UL},
+		{PREDISTORT,	 "Pre-Distort Signal", "", Widgets::Variable::UINT_PARAMETER, 1UL},
+		{QUANTIZE,	 "Use Quantization Mode", "", Widgets::Variable::UINT_PARAMETER, 0UL}
 	};
 }
 
@@ -119,11 +88,13 @@ IIRfilter::IIRfilter(QMainWindow* main_window, Event::Manager* ev_manager)
 	
 	Widgets::Panel::createGUI(get_default_vars(), {FILTER_TYPE, PREDISTORT, QUANTIZE});
 	customizeGUI();
-	update_state(RT::State::INIT);
-	refresh(); // refresh the GUI
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
 
+IIRfilterComponent::IIRfilterComponent(Widgets::Plugin* host_plugin) 
+	: Widgets::Component(host_plugin, "IIR Filter", get_default_channels(), get_default_vars())
+{}
+				
 //execute, the code block that actually does the signal processing
 void IIRfilterComponent::execute() {
 	switch (this->getState()) {
@@ -364,15 +335,15 @@ void IIRfilter::customizeGUI(void) {
 	
 	filterType = new QComboBox;
 	filterType->setToolTip("IIR filter.");
-	filterType->insertItem(1, "Butterworth");
-	filterType->insertItem(2, "Chebyshev");
-	filterType->insertItem(3," Elliptical");
+	filterType->insertItem(0, "Butterworth");
+	filterType->insertItem(1, "Chebyshev");
+	filterType->insertItem(2," Elliptical");
 	optionLayout->addRow("IIR filter", filterType);
 	QObject::connect(filterType,SIGNAL(activated(int)), this, SLOT(updateFilterType(int)));
 	
 	normType = new QComboBox;
-	normType->insertItem(1, "3 dB bandwidth");
-	normType->insertItem(2, "Ripple bandwidth");
+	normType->insertItem(0, "3 dB bandwidth");
+	normType->insertItem(1, "Ripple bandwidth");
 	normType->setToolTip("Type of Chebyshev normalization");
 	optionLayout->addRow("Chebyshev Normalize Type:", normType);
 	QObject::connect(normType,SIGNAL(activated(int)), this, SLOT(updateNormType(int)));
@@ -420,3 +391,35 @@ std::vector<double> IIRfilterPlugin::getIIRfilterDenominatorCoefficients()
 {
 	return dynamic_cast<IIRfilterComponent*>(this->getComponent())->getDenominatorCoefficients();
 }
+
+//create plug-in
+std::unique_ptr<Widgets::Plugin> createRTXIPlugin(Event::Manager* ev_manager)
+{
+  return std::make_unique<IIRfilterPlugin>(ev_manager);
+}
+
+Widgets::Panel* createRTXIPanel(QMainWindow* main_window,
+                                Event::Manager* ev_manager)
+{
+  return new IIRfilter(main_window, ev_manager);
+}
+
+std::unique_ptr<Widgets::Component> createRTXIComponent(
+    Widgets::Plugin* host_plugin)
+{
+  return std::make_unique<IIRfilterComponent>(host_plugin);
+}
+
+Widgets::FactoryMethods fact;
+
+extern "C"
+{
+Widgets::FactoryMethods* getFactories()
+{
+  fact.createPanel = &createRTXIPanel;
+  fact.createComponent = &createRTXIComponent;
+  fact.createPlugin = &createRTXIPlugin;
+  return &fact;
+}
+};
+
