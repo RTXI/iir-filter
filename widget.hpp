@@ -83,9 +83,6 @@ class IIRfilter : public Widgets::Panel {
 		IIRfilter(QMainWindow* main_window, Event::Manager* ev_manager);
 		void customizeGUI();
 	
-	protected:
-		 void update_state(RT::State::state_t flag) override;
-	
 	private:	
 
 		QComboBox *filterType;
