@@ -48,9 +48,9 @@ class IIRfilterComponent : public Widgets::Component{
 			BUTTER=0, CHEBY, ELLIP,
 		};
 		// filter parameters
-		FilterTransFunc *analog_filter;
-		IirFilterDesign *filter_design;
-		FilterImplementation *filter_implem;
+		FilterTransFunc *analog_filter=nullptr;
+		IirFilterDesign *filter_design=nullptr;
+		FilterImplementation *filter_implem=nullptr;
 
 		double h3; // filter coefficients
 		filter_t filter_type; // type of filter

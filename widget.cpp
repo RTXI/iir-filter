@@ -86,7 +86,7 @@ IIRfilter::IIRfilter(QMainWindow* main_window, Event::Manager* ev_manager)
 	"Since this plug-in computes new filter coefficients whenever you change the parameters, you should not"
 	"change any settings during real-time.</p>");
 	
-	Widgets::Panel::createGUI(get_default_vars(), {FILTER_TYPE, PREDISTORT, QUANTIZE});
+	Widgets::Panel::createGUI(get_default_vars(), {FILTER_TYPE, PREDISTORT, QUANTIZE, CHEBYSHEV_NORM_TYPE});
 	customizeGUI();
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
@@ -121,6 +121,7 @@ void IIRfilterComponent::execute() {
 			quant_enabled = getValue<uint64_t>(QUANTIZE) == 1;
 			makeFilter();
 			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
+			this->setState(RT::State::EXEC);
 			break;
 	
 		case RT::State::PAUSE:
@@ -193,6 +194,7 @@ void IIRfilter::updateNormType(int index) {
 }
 
 void IIRfilterComponent::makeFilter() {
+	delete analog_filter;
 	switch (filter_type) {
 		case BUTTER:
 			analog_filter = new ButterworthTransFunc(filter_order);
@@ -214,8 +216,10 @@ void IIRfilterComponent::makeFilter() {
 	
 	if (predistort_enabled) analog_filter->FrequencyPrewarp(dt);
 	
+	delete filter_design;
 	filter_design = BilinearTransf(analog_filter, dt);
-	
+
+	delete filter_implem;
 	if (quant_enabled) {
 		filter_implem = new DirectFormIir(filter_design->GetNumNumerCoeffs(),
 			filter_design->GetNumDenomCoeffs(),
@@ -323,15 +327,17 @@ void IIRfilter::customizeGUI(void) {
 	//QGridLayout *customLayout = Widgets::Panel::getLayout();
 	auto* customLayout = dynamic_cast<QVBoxLayout*>(this->layout());
 
-	QVBoxLayout *customGUILayout = new QVBoxLayout;
+	//QVBoxLayout *customGUILayout = new QVBoxLayout;
 	
 	QPushButton *saveDataButton = new QPushButton("Save IIR Coefficients");
-	customGUILayout->addWidget(saveDataButton);
+	//customGUILayout->addWidget(saveDataButton);
+	customLayout->addWidget(saveDataButton, 0);
 	QObject::connect(saveDataButton, SIGNAL(clicked()), this, SLOT(saveIIRData()));
 	saveDataButton->setToolTip("Save filter parameters and coefficients to a file");
-	
-	QFormLayout *optionLayout = new QFormLayout;
-	customGUILayout->addLayout(optionLayout);
+
+	auto* topGroup = new QGroupBox("Filter Types");
+	QFormLayout *optionLayout = new QFormLayout(topGroup);
+	//customGUILayout->addLayout(optionLayout);
 	
 	filterType = new QComboBox;
 	filterType->setToolTip("IIR filter.");
@@ -348,8 +354,10 @@ void IIRfilter::customizeGUI(void) {
 	optionLayout->addRow("Chebyshev Normalize Type:", normType);
 	QObject::connect(normType,SIGNAL(activated(int)), this, SLOT(updateNormType(int)));
 	normType->setEnabled(false);
-	
-	QFormLayout *checkBoxLayout = new QFormLayout;
+	customLayout->insertWidget(0, topGroup);
+
+	auto* checkboxGroup = new QGroupBox("Finetunning");
+	QFormLayout *checkBoxLayout = new QFormLayout(checkboxGroup);
 	QCheckBox *predistortCheckBox = new QCheckBox;
 	checkBoxLayout->addRow("Predistort frequencies", predistortCheckBox);
 	QCheckBox *quantizeCheckBox = new QCheckBox;
@@ -359,14 +367,7 @@ void IIRfilter::customizeGUI(void) {
 	predistortCheckBox->setToolTip("Predistort frequencies for bilinear transform");
 	quantizeCheckBox->setToolTip("Quantize input and coefficients");
 	
-	//QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), saveDataButton, SLOT(setEnabled(bool)));
-	//QObject::connect(Widgets::Panel::pauseButton, SIGNAL(toggled(bool)), modifyButton, SLOT(setEnabled(bool)));
-	//Widgets::Panel::pauseButton->setToolTip("Start/Stop filter");
-	//Widgets::Panel::modifyButton->setToolTip("Commit changes to parameter values");
-	//Widgets::Panel::unloadButton->setToolTip("Close plug-in");
-	
-	customLayout->addLayout(customGUILayout, 0);
-	customLayout->addLayout(checkBoxLayout, 2);
+	customLayout->insertWidget(1, checkboxGroup);
 	setLayout(customLayout);	
 }
 
