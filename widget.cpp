@@ -51,17 +51,17 @@ inline std::vector<Widgets::Variable::Info> get_default_vars()
 {
 //set up parameters, calls for initialization, creation, update, and refresh of GUI
 	return {
-		{FILTER_ORDER,           "Filter Order", "Filter Order", Widgets::Variable::INT_PARAMETER, 10},
+		{FILTER_ORDER,           "Filter Order", "Filter Order", Widgets::Variable::INT_PARAMETER, int64_t{10}},
 		{PASSBAND_RIPPLE,        "Passband Ripple (dB)", "Passband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 3.0},
 		{PASSBAND_EDGE,          "Passband Edge (Hz)", "Passband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 60.0},
 		{STOPBAND_RIPPLE,        "Stopband Ripple (dB)", "Stopband Ripple (dB)", Widgets::Variable::DOUBLE_PARAMETER, 60.0},
 		{STOPBAND_EDGE,          "Stopband Edge (Hz)", "Stopband Edge (Hz)", Widgets::Variable::DOUBLE_PARAMETER, 200.0},
-		{INPUT_QUANTIZING_FACTOR,"Input quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 4096},
-		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, 4096},
-		{FILTER_TYPE,		 "Type of filter to implement", "Butterworth, Chebyshev, Elliptical", Widgets::Variable::UINT_PARAMETER, 0UL},
-		{CHEBYSHEV_NORM_TYPE,	 "Chebyshev normalization type", "", Widgets::Variable::UINT_PARAMETER, 0UL},
-		{PREDISTORT,	 "Pre-Distort Signal", "", Widgets::Variable::UINT_PARAMETER, 1UL},
-		{QUANTIZE,	 "Use Quantization Mode", "", Widgets::Variable::UINT_PARAMETER, 0UL}
+		{INPUT_QUANTIZING_FACTOR,"Input quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, int64_t{4096}},
+		{COEFF_QUANTIZING_FACTOR,"Coefficients quantizing factor", "Bits eg. 10, 12, 16", Widgets::Variable::INT_PARAMETER, int64_t{4096}},
+		{FILTER_TYPE,		 "Type of filter to implement", "Butterworth, Chebyshev, Elliptical", Widgets::Variable::UINT_PARAMETER, uint64_t{0}},
+		{CHEBYSHEV_NORM_TYPE,	 "Chebyshev normalization type", "", Widgets::Variable::UINT_PARAMETER, uint64_t{0}},
+		{PREDISTORT,	 "Pre-Distort Signal", "", Widgets::Variable::UINT_PARAMETER, uint64_t{1}},
+		{QUANTIZE,	 "Use Quantization Mode", "", Widgets::Variable::UINT_PARAMETER, uint64_t{0}}
 	};
 }
 
