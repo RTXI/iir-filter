@@ -102,10 +102,6 @@ void IIRfilterComponent::execute() {
 			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
 			break;
 		case RT::State::INIT:
-			initParameters();
-			this->setState(RT::State::EXEC);
-			break;
-	
 		case RT::State::MODIFY:
 			filter_order = getValue<int64_t>(FILTER_ORDER);
 			passband_ripple = getValue<double>(PASSBAND_RIPPLE);
