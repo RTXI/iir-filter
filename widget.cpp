@@ -102,6 +102,21 @@ void IIRfilterComponent::execute() {
 			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
 			break;
 		case RT::State::INIT:
+      filter_order = getValue<int64_t>(FILTER_ORDER);
+			passband_ripple = getValue<double>(PASSBAND_RIPPLE);
+			passband_edge = getValue<double>(PASSBAND_EDGE);
+			stopband_ripple = getValue<double>(STOPBAND_RIPPLE);
+			stopband_edge = getValue<double>(STOPBAND_EDGE);
+			stopband_edge *= TWO_PI;
+			filter_type = static_cast<filter_t>(getValue<uint64_t>(FILTER_TYPE));
+			input_quan_factor = 2 ^ getValue<int64_t>(INPUT_QUANTIZING_FACTOR); // quantize input to 12 bits
+			coeff_quan_factor = 2 ^ getValue<int64_t>(COEFF_QUANTIZING_FACTOR); // quantize filter coefficients to 12 bits
+			ripple_bw_norm = getValue<uint64_t>(CHEBYSHEV_NORM_TYPE);
+			predistort_enabled = getValue<uint64_t>(PREDISTORT) == 1;
+			quant_enabled = getValue<uint64_t>(QUANTIZE) == 1;
+			makeFilter();
+			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
+      this->setState(RT::State::EXEC);
 		case RT::State::MODIFY:
 			filter_order = getValue<int64_t>(FILTER_ORDER);
 			passband_ripple = getValue<double>(PASSBAND_RIPPLE);
@@ -117,18 +132,15 @@ void IIRfilterComponent::execute() {
 			quant_enabled = getValue<uint64_t>(QUANTIZE) == 1;
 			makeFilter();
 			writeoutput(0, filter_implem->ProcessSample(readinput(0)));
-			this->setState(RT::State::EXEC);
+			this->setState(RT::State::PAUSE);
 			break;
-	
 		case RT::State::PAUSE:
 			writeoutput(0, 0); // stop command in case pause occurs in the middle of command
 			break;
-	
 		case RT::State::UNPAUSE:
 			this->setState(RT::State::EXEC);
 			writeoutput(0,0);
 			break;
-	
 		case RT::State::PERIOD:
 			dt = RT::OS::getPeriod() * 1e-9; // s
 			this->setState(RT::State::EXEC);
