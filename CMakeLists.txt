@@ -39,7 +39,7 @@ add_library(
 
 # Consult library website for how to link them to your plugin using cmake
 target_link_libraries(iir-filter PUBLIC 
-    rtxi::rtxi rtxi::rtxidsp rtxi::rtxigen rtxi::rtxififo Qt5::Core Qt5::Gui Qt5::Widgets 
+    rtxi::rtxi rtxi::rtxidsp rtxi::rtxigen rtxi::rtxipal rtxi::rtxififo Qt5::Core Qt5::Gui Qt5::Widgets 
     dl fmt::fmt
 )
 

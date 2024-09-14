@@ -27,9 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QMessageBox>
 #include <QFormLayout>
 #include <QCheckBox>
-#include <algorithm>
-#include <numeric>
+#include <QGroupBox>
+#include <QPushButton>
 #include <rtxi/dsp/log2.h>
+#include <rtxi/rtos.hpp>
 #include "widget.hpp"
 
 enum PARAMETER : Widgets::Variable::Id
